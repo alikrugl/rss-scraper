@@ -1,17 +1,35 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 
+	"github.com/alikrugl/rss-scraper/internal/database"
 	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
 )
+
+type apiConfig struct {
+	DB *database.Queries
+}
 
 func main() {
 	godotenv.Load()
-
+	dbURL := os.Getenv("DB_CONN")
+	db, err := sql.Open("postgres", dbURL)
+	if err != nil {
+		log.Fatal(err)
+	}
+	dbQueries := database.New(db)
+	apiCfg := apiConfig{
+		DB: dbQueries,
+	}
 	mux := http.NewServeMux()
+
+	mux.HandleFunc("POST /v1/users", apiCfg.handlerUsersCreate)
 	mux.HandleFunc("GET /v1/healthz", handlerReadiness)
 	mux.HandleFunc("GET /v1/err", handlerErr)
 
