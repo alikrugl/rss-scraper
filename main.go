@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/alikrugl/rss-scraper/internal/database"
 	"github.com/joho/godotenv"
@@ -41,6 +42,10 @@ func main() {
 
 	mux.HandleFunc("GET /v1/healthz", handlerReadiness)
 	mux.HandleFunc("GET /v1/err", handlerErr)
+
+	const collectionConcurrency = 10
+	const collectionInterval = time.Minute
+	go startScraping(dbQueries, collectionConcurrency, collectionInterval)
 
 	fmt.Println("Sever runnig on port", os.Getenv("PORT"))
 	http.ListenAndServe("127.0.0.1:"+os.Getenv("PORT"), mux)
